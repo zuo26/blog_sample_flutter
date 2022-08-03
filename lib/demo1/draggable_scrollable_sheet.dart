@@ -19,16 +19,19 @@ class _MyDraggableScrollableSheetState
     return MaterialApp(
       home: Scaffold(
         body: DraggableScrollableSheet(
-          maxChildSize: 0.9,
-          minChildSize: 0.25,
+          maxChildSize: 0.8,
+          minChildSize: 0.25, // 都是占父组件的比例
           initialChildSize: 0.25,
           expand: true,
           builder: (BuildContext context, ScrollController controller) {
             return Stack(
               children: [
-                Body(
-                  controller: controller,
-                  paddingTop: headerHeight,
+                Container(
+                  color: Colors.blue,
+                  child: Body(
+                    controller: controller,
+                    paddingTop: headerHeight,
+                  ),
                 ),
                 const IgnorePointer(
                   child: Header(
@@ -66,7 +69,7 @@ class Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const divider = Divider(color: Colors.blue, height: 0.5);
+    const divider = Divider(color: Colors.white, height: 0.5);
     const physics = ClampingScrollPhysics();
     return ListView.separated(
       padding: EdgeInsets.only(top: paddingTop),
