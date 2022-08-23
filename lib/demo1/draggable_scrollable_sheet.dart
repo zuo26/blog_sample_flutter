@@ -14,43 +14,96 @@ class MyDraggableScrollableSheet extends StatefulWidget {
 
 class _MyDraggableScrollableSheetState
     extends State<MyDraggableScrollableSheet> {
+  late DraggableScrollableController _controller;
+  double _currStale = 0.25;
+  bool _animation = false;
+  final _duration = const Duration(milliseconds: 250);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = DraggableScrollableController();
+
+    _controller.addListener(() {
+      if (_currStale != _controller.size) {
+        _currStale = _controller.size;
+      }
+      debugPrint('[listener] size: ${_controller.size}'
+          ', pixels : ${_controller.pixels}');
+    });
+  }
+
+  void _scrollAnimation() async {
+    _animation = true;
+    if (_currStale >= (0.8 + 0.25) * 0.5) {
+      await _controller.animateTo(
+        0.8,
+        duration: _duration,
+        curve: Curves.ease,
+      );
+    } else {
+      await _controller.animateTo(
+        0.25,
+        duration: _duration,
+        curve: Curves.ease,
+      );
+    }
+    _animation = false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        body: DraggableScrollableSheet(
-          maxChildSize: 0.8,
-          minChildSize: 0.25, // 都是占父组件的比例
-          initialChildSize: 0.25,
-          expand: true,
-          builder: (BuildContext context, ScrollController controller) {
-            return Stack(
-              children: [
-                Container(
-                  color: Colors.blue,
-                  child: Body(
-                    controller: controller,
-                    paddingTop: headerHeight,
-                  ),
-                ),
-                const IgnorePointer(
-                  child: Header(
-                    height: headerHeight,
-                  ),
-                ),
-                Container(
-                  height: headerHeight,
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    icon: const Icon(Icons.drag_handle),
-                    onPressed: () {
-                      debugPrint('click icon');
-                    },
-                  ),
-                )
-              ],
-            );
+        body: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification notification) {
+            if (_animation) {
+              return false;
+            }
+            if (notification is ScrollStartNotification) {
+              debugPrint('start scroll');
+            } else if (notification is ScrollEndNotification) {
+              debugPrint('stop scroll');
+              _scrollAnimation();
+            }
+            return false;
           },
+          child: DraggableScrollableSheet(
+            maxChildSize: 0.8,
+            minChildSize: 0.25,
+            // 都是占父组件的比例
+            initialChildSize: 0.25,
+            expand: true,
+            controller: _controller,
+            builder: (BuildContext context, ScrollController controller) {
+              return Stack(
+                children: [
+                  Container(
+                    color: Colors.blue,
+                    child: Body(
+                      controller: controller,
+                      paddingTop: headerHeight,
+                    ),
+                  ),
+                  const IgnorePointer(
+                    child: Header(
+                      height: headerHeight,
+                    ),
+                  ),
+                  Container(
+                    height: headerHeight,
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.drag_handle),
+                      onPressed: () {
+                        debugPrint('click icon');
+                      },
+                    ),
+                  )
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
