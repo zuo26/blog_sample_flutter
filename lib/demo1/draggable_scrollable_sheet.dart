@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// 底部可拖动的带固定header抽屉效果
-
 const double headerHeight = 56;
 
 class MyDraggableScrollableSheet extends StatefulWidget {
@@ -24,35 +22,57 @@ class _MyDraggableScrollableSheetState
     super.initState();
     _controller = DraggableScrollableController();
 
-    _controller.addListener(() {
-      if (_currStale != _controller.size) {
-        _currStale = _controller.size;
-      }
-      debugPrint('[listener] size: ${_controller.size}'
-          ', pixels : ${_controller.pixels}');
-    });
+    _controller.addListener(_draggableScrollListener);
   }
 
-  void _scrollAnimation() async {
+  @override
+  void dispose() {
+    _controller.removeListener(_draggableScrollListener);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _draggableScrollListener() {
+    if (_currStale != _controller.size) {
+      _currStale = _controller.size;
+    }
+    debugPrint('[listener] size: ${_controller.size}'
+        ', pixels : ${_controller.pixels}');
+  }
+
+  Future<void> _scrollAnimation() async {
+    if (_animation) {
+      return;
+    }
     _animation = true;
+    debugPrint('async start');
+
+    // `await`ing the returned Feature(of [animateTo]) may cause the method to hang
+    // So, Start a timer to set [_animation].
+
     if (_currStale >= (0.8 + 0.25) * 0.5) {
-      await _controller.animateTo(
+      _controller.animateTo(
         0.8,
-        duration: _duration,
+        // control speed, (+0.1) Avoid situations where it's equal to 0
+        duration: _duration * ((0.8 - _currStale) / (0.8 - 0.25) + 0.1),
         curve: Curves.ease,
       );
     } else {
-      await _controller.animateTo(
+      _controller.animateTo(
         0.25,
-        duration: _duration,
+        duration: _duration * ((_currStale - 0.25) / (0.8 - 0.25) + 0.1),
         curve: Curves.ease,
       );
     }
-    _animation = false;
+    Future.delayed(_duration).then((value) => {
+          debugPrint('async stop'),
+          _animation = false,
+        });
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('build');
     return MaterialApp(
       home: Scaffold(
         body: NotificationListener<ScrollNotification>(
